@@ -1,0 +1,205 @@
+getwd()
+setwd("C:/Users/DELL/Desktop")
+animalrights <- read.csv("animalrights.csv")
+library(GGally)
+library(corrr)
+library(ggcorrplot)
+library(FactoMineR)
+library(factoextra)
+library(paran)
+library(psych)
+library(car)
+library(GPArotation)
+library(MVN)
+library(ICS)
+library(tidyverse)
+library(naniar)
+library(dplyr)
+library(EFAtools)
+library(EFA.dimensions)
+
+#data management
+
+str(animalrights)
+summary(animalrights)
+animalrights$sex
+
+animalrights <- animalrights %>%
+  mutate(sex = as.factor(recode(sex,
+                                "1" = "female",
+                                "2" = "male")))
+#woman 120 men 29
+#extreme values on ar18
+
+hist(animalrights$ar18,
+     xlab = "ar18",
+     main = "Histogram of ar18",
+     breaks = sqrt(nrow(animalrights)))
+
+boxplot(animalrights$ar1, animalrights$ar2, animalrights$ar3, animalrights$ar4)
+
+boxplot(animalrights$ar5, animalrights$ar6, animalrights$ar7, animalrights$ar8)
+
+boxplot(animalrights$ar9, animalrights$ar10, animalrights$ar11, animalrights$ar12)
+
+boxplot(animalrights$ar13, animalrights$ar14, animalrights$ar15, animalrights$ar16)
+
+boxplot(animalrights$ar17, animalrights$ar18, animalrights$ar19, animalrights$ar20)
+
+boxplot(animalrights$ar21, animalrights$ar22, animalrights$ar23, animalrights$ar24)
+
+boxplot(animalrights$ar25, animalrights$ar25, animalrights$ar27, animalrights$ar28)
+
+library(naniar)
+n_miss(animalrights)
+miss_var_summary(animalrights)
+gg_miss_var(animalrights)
+animalrights <- animalrights %>%
+  drop_na()
+  
+animalrights_items1 = animalrights %>%
+dplyr::select(ar1:ar28)
+cor2 = animalrights_items1 %>%
+cor()
+cor2
+
+
+ggcorr(cor2)
+
+ggcorrplot(cor(animalrights_items1 ), p.mat = cor_pmat(animalrights_items1),
+hc.order = TRUE, type = "lower")
+
+animal_cor <- cor(animalrights_items1)
+animal_cor
+
+#KMO Test
+KMO(animal_cor)
+
+#Factor Extraction
+#Test multivariate normality (the violation of the multivariate normality)
+result <- mvn(animalrights [, 1:28], mvnTest = "hz")
+result$multivariateNormality
+mvnorm.kur.test(na.omit(animalrights [, 1:28]))
+mvnorm.skew.test(na.omit(animalrights [, 1:28]))
+
+#Factor analysis
+EFAmodel <- fa(animal_cor, nfactors = 5, fm = "pa")
+EFAmodel_common <- as.data.frame(sort(EFAmodel$communality, decreasing = TRUE))
+EFAmodel_common
+mean(EFAmodel$communality) #44%
+
+#Choose the Ideal Number of factors
+
+#screetest -2
+SCREE_PLOT(animal_cor)
+
+#kaiser-guttman - 2
+KGC(animal_cor, eigen_type = "EFA")
+
+#parallel test - 4 
+
+fa.parallel(animal_cor, n.obs = nrow(animalrights), fa = "fa", fm = "pa")
+
+#VSS - 2 
+vss(animal_cor, n = 149)
+
+#map - 5 
+
+MAP(animal_cor, Ncases = 149)
+
+EFAmodel <- fa(animal_cor, nfactors = 2, fm = "pa")
+EFAmodel_common2 <- as.data.frame(sort(EFAmodel$communality, decreasing = TRUE))
+EFAmodel_common2
+mean(EFAmodel$communality) #34%
+
+#Rotation
+
+round1 <- fa(animal_cor, nfactors = 5, fm = "pa", rotate = "varimax")
+round1
+round1$loadings
+round1$communality 
+
+round2 <- fa(animal_cor, nfactors = 2, fm = "pa", rotate = "varimax")
+round2$loadings
+round2$communality #high cross-loadings
+
+
+round3 <- fa(animal_cor, nfactors = 2, fm = "pa", rotate = "promax")
+round3$communality
+round3$loadings
+round3
+
+round4 <- fa(animal_cor [, -c(16) ], nfactors = 2, fm = "pa", rotate = "varimax")
+round4$communality
+round4$loadings
+round4
+
+round5 <- fa(animal_cor [, -c(22) ], nfactors = 2, fm = "pa", rotate = "varimax")
+round5$communality
+round5$loadings
+round5
+
+round6 <- fa(animal_cor [, -c(21) ], nfactors = 2, fm = "pa", rotate = "varimax")
+round6$communality
+round6$loadings
+round6 #very high cross-loadings
+
+round7 <- fa(animal_cor [, -c(15) ], nfactors = 2, fm = "pa", rotate = "promax")
+round7$communality
+round7$loadings
+round7
+
+round8 <- fa(animal_cor [, -c(15, 3) ], nfactors = 2, fm = "pa", rotate = "promax")
+round8$communality
+round8$loadings
+round8 #low commonality
+
+round9 <- fa(animal_cor [, -c(15, 12) ], nfactors = 2, fm = "pa", rotate = "promax")
+round9$communality
+round9$loadings
+round9 #cross-loadings 
+
+round10 <- fa(animal_cor [, -c(15, 12, 8) ], nfactors = 2, fm = "pa", rotate = "promax")
+round10$communality
+round10$loadings
+round10 #low commonality
+
+round11 <- fa(animal_cor [, -c(15, 12, 8, 18) ], nfactors = 2, fm = "pa", rotate = "promax")
+round11$communality
+round11$loadings
+round11 #low commonality
+
+round12 <- fa(animal_cor [, -c(15, 12, 8, 18, 3) ], nfactors = 2, fm = "pa", rotate = "promax")
+round12$communality
+round12$loadings
+round12 
+
+finalmodel <- round12
+EFAmodel <- round3
+finalmodel
+
+fa.diagram(finalmodel)
+mean(finalmodel$communality) 
+
+library(palmerpenguins)
+names(finalmodel)
+finalmodel$Vaccounted
+finalmodel$communality
+
+#Naming Factors
+
+#Factor1: Animal Exploitation
+
+#Factor2: Animal Testing 
+
+#Build regression model 
+
+factorscores = factor.scores(animalrights [, 1:28], EFAmodel )$scores
+factorscores
+
+animalregression = cbind(animalrights, factorscores)
+
+str(animalregression)
+
+model1 <- lm(liberal ~ PA1 + PA2, data = animalregression)
+model1
